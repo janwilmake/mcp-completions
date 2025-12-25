@@ -8,11 +8,17 @@ Check [readme](https://github.com/janwilmake/universal-mcp-oauth/tree/main/mcp-c
 
 After this; how can I add statefulness and other cool features?
 
-- cache?
-- og image and view of response
-- frontmatter
-- responses api
-- x login + stripe credit? pricing
-- cronjobs
+Use this in contextarea
+
+-
+
+CLI
+
+- ✔️ GitHub login + Stripe credit? pricing
+- ✔️ cache
+- ✔️ frontmatter: `profile`, `mcp`, `model`, `base`
+- ✔️ cronjobs
+- ❌ og image and view of response
+- ❌ responses api
 
 Where does the CLI hook into the boundary of what i'm creating? Determine how I add `mcp-completions` into `contextarea` as well as the new `nlang.dev` cli
