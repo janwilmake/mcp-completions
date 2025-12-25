@@ -387,16 +387,9 @@ async function fetchUrlContext(
     const isPdf = contentType?.startsWith("application/pdf");
 
     if (isHtml || isPdf) {
-      const appendix = url.startsWith("https://github.com/")
-        ? "For github code, use https://uithub.com/owner/repo"
-        : url.startsWith("https://x.com")
-        ? "For x threads, use xymake.com/status/..."
-        : extractConfig
-        ? "Extract service failed to process this URL"
-        : "For blogs/docs, use firecrawl or https://jina.ai/reader";
       return {
         url,
-        text: `${isHtml ? "HTML" : "PDF"} urls are not supported. ${appendix}`,
+        text: `${isHtml ? "HTML" : "PDF"} urls are not supported.`,
         tokens: 0,
       };
     }
