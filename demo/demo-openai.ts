@@ -1,4 +1,7 @@
-import { chatCompletionsProxy, OAuthProviders } from "./mcp-completions";
+import {
+  chatCompletionsProxy,
+  OAuthProviders,
+} from "../packages/mcp-completions/mcp-completions";
 import { OpenAI } from "openai";
 
 // Export DO for Cloudflare Workers

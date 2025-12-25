@@ -105,9 +105,9 @@ chatCompletionsProxy(env, {
 
 ## Documentation
 
-- **[SDK Integrations](./docs/integrations.md)** - OpenAI, OpenRouter, Cloudflare AI Gateway, and more
-- **[Creating a Shadow Site](./docs/creating-a-shadow-site.md)** - Build URL proxies with OAuth
-- **[Creating an MCP Server](./docs/creating-an-mcp.md)** - Build MCP servers with compatible auth
+- **[SDK Integrations](https://github.com/janwilmake/mcp-completions/tree/main/docs/integrations.md)** - OpenAI, OpenRouter, Cloudflare AI Gateway, and more
+- **[Creating a Shadow Site](https://github.com/janwilmake/mcp-completions/tree/main/docs/creating-a-shadow-site.md)** - Build URL proxies with OAuth
+- **[Creating an MCP Server](https://github.com/janwilmake/mcp-completions/tree/main/docs/creating-an-mcp.md)** - Build MCP servers with compatible auth
 
 ## How It Works
 
@@ -116,7 +116,3 @@ chatCompletionsProxy(env, {
 3. If missing, returns login links in the stream
 4. Once authenticated, discovers tools and translates to OpenAI functions
 5. Executes tool calls and streams results back
-
-## Demo
-
-https://demo.connectconnector.com
