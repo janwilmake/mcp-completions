@@ -1,3 +1,6 @@
+/// <reference types="@cloudflare/workers-types" />
+/// <reference lib="esnext" />
+
 import {
   createMCPOAuthHandler,
   MCPOAuthEnv,
@@ -713,6 +716,10 @@ export const chatCompletionsProxy = (
         }
 
         body.tools = body.tools?.filter((x) => x.type !== "url_context");
+
+        if (!body.tools?.length) {
+          body.tools = undefined;
+        }
       }
 
       // Process MCP tools
@@ -773,7 +780,12 @@ export const chatCompletionsProxy = (
           await mcpHandler?.refreshProviders(authenticatedUrls);
         }
 
-        body.tools = transformedTools;
+        if (transformedTools.length > 0) {
+          body.tools = transformedTools;
+        } else {
+          body.tools = undefined;
+        }
+
         mcpToolMap = toolMap;
       }
 
