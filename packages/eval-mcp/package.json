@@ -1,0 +1,19 @@
+{
+  "name": "eval-mcp",
+  "version": "0.3.0",
+  "bin": "eval-mcp.ts",
+  "files": [
+    "eval-mcp.ts",
+    "README.md"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.0.8"
+  },
+  "dependencies": {
+    "mcp-completions-stateless": "^0.1.0",
+    "openai": "^6.16.0"
+  },
+  "scripts": {
+    "test": "bun run mcp-eval.ts mcp-eval.json"
+  }
+}

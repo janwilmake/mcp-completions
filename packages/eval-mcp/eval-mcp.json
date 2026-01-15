@@ -1,0 +1,156 @@
+{
+  "$schema": "https://eval-mcp.wilmake.com",
+
+  "evals": [
+    {
+      "name": "task-mcp-tool-discovery",
+      "description": "Verify that the Task MCP exposes all three expected tools",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "What tools do you have available?",
+      "expected_result": "The response should mention capabilities for deep research, task groups, and getting/retrieving results"
+    },
+    {
+      "name": "task-mcp-deep-research-initiation",
+      "description": "Test initiating a deep research task on a specific topic",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Start a deep research task to analyze the current state of WebAssembly adoption in serverless computing",
+      "expected_result": "The model should call the Create Deep Research Task tool with a research query about WebAssembly in serverless computing and return a task ID or progress link"
+    },
+    {
+      "name": "task-mcp-task-group-enrichment",
+      "description": "Test creating a task group for batch data enrichment",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Create a task group to enrich the following companies with their latest funding information: Stripe, Figma, Notion",
+      "expected_result": "The model should call the Create Task Group tool with the list of companies and return a group ID for tracking progress"
+    },
+    {
+      "name": "task-mcp-get-result",
+      "description": "Test retrieving results from a completed task",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Get the results for task ID trun_809cc816c524443cabc432cb1815d7bc",
+      "expected_result": "The model should call the getResultMarkdown tool with the provided task ID"
+    },
+    {
+      "name": "task-mcp-sentiment-analysis-workflow",
+      "description": "Test a sentiment analysis use case with task group",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Create a task group to perform sentiment analysis on customer reviews for these products: iPhone 15 Pro, Samsung Galaxy S24, Google Pixel 8",
+      "expected_result": "The model should create a task group configured for sentiment analysis and return tracking information"
+    },
+    {
+      "name": "task-mcp-fact-checking-workflow",
+      "description": "Test a fact-checking use case with deep research",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Start a deep research task to fact-check the claim: 'Electric vehicles now account for over 20% of new car sales globally'",
+      "expected_result": "The model should initiate a deep research task focused on verifying the EV market share claim with credible sources"
+    },
+    {
+      "name": "task-mcp-competitive-analysis",
+      "description": "Test competitive analysis via task group enrichment",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Create a task group to research and compare these MCP clients: Cursor, VS Code, Claude Desktop, Windsurf",
+      "expected_result": "The model should create a task group to enrich each MCP client with feature comparisons and return a group ID"
+    },
+    {
+      "name": "task-mcp-async-workflow",
+      "description": "Test the async workflow by initiating multiple tasks",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Start two deep research tasks in parallel: one on 'AI agent frameworks in 2025' and another on 'MCP protocol adoption trends'",
+      "expected_result": "The model should initiate two separate deep research tasks and return task IDs for both, demonstrating async capability"
+    },
+    {
+      "name": "task-mcp-error-handling-invalid-task",
+      "description": "Test error handling when requesting results for a non-existent task",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Get results for task ID trun_1234567890abcdef1234567890abcdef",
+      "expected_result": "The response should call the getResultMarkdown tool"
+    },
+    {
+      "name": "task-mcp-product-listing-improvement",
+      "description": "Test product listing improvement use case",
+      "model": "gpt-5.2-2025-12-11",
+      "basePath": "https://api.openai.com/v1",
+      "llm_key": "OPENAI_API_KEY",
+      "mcps": [
+        {
+          "url": "https://task-mcp.parallel.ai/mcp",
+          "authorization_key": "PARALLEL_API_KEY"
+        }
+      ],
+      "prompt": "Create a task group to improve product listings by researching competitor descriptions for: wireless earbuds, portable charger, laptop stand",
+      "expected_result": "The model should create a task group for product listing research and return tracking information"
+    }
+  ]
+}

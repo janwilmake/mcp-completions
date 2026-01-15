@@ -1,5 +1,5 @@
 /// <reference types="@types/node" />
-import { ChatCompletionCreateParamsStreaming } from "openai/resources/index.mjs";
+import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.mjs";
 import {
   chatCompletionsProxy,
   ChatCompletionRequest,
@@ -15,10 +15,8 @@ const client = new OpenAI({
   fetch: fetchProxy,
 });
 
-const stream = await client.chat.completions.create({
+const response = await client.chat.completions.create({
   model: "gpt-4o",
-  stream: true,
-  stream_options: { include_usage: true },
   messages: [{ role: "user", content: "What tools do you have?" }],
   tools: [
     {
@@ -28,8 +26,6 @@ const stream = await client.chat.completions.create({
     },
     { type: "url_context", max_urls: 10 },
   ],
-} satisfies ChatCompletionRequest as unknown as ChatCompletionCreateParamsStreaming);
+} satisfies ChatCompletionRequest as unknown as ChatCompletionCreateParamsNonStreaming);
 
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices[0]?.delta?.content || "");
-}
+console.log(response?.choices[0]?.message?.content);

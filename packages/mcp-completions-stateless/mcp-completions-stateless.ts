@@ -1,6 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
-/// <reference lib="esnext" />
-
 interface MCPToolSpec {
   type: "mcp";
   server_url: string;
@@ -440,18 +437,10 @@ export const chatCompletionsProxy = (config: {
     }
 
     const requestId = `chatcmpl-${Date.now()}`;
+    const userRequestedStream = body.stream === true;
 
-    if (!body.stream) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            message: "This middleware requires stream: true to be set",
-            type: "invalid_request_error",
-          },
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    }
+    // Force streaming internally for MCP tool processing
+    body.stream = true;
 
     if (body.tools) {
       const mcpTools = body.tools.filter((x) => x.type === "mcp");
@@ -536,7 +525,7 @@ export const chatCompletionsProxy = (config: {
                 clientInfo,
               );
               session = {
-                sessionId: sessionData.sessionId,
+                sessionId: sessionData.sessionId || undefined,
                 initialized: true,
                 tools: sessionData.tools,
               };
@@ -559,7 +548,7 @@ export const chatCompletionsProxy = (config: {
             )
               continue;
 
-            const functionName = `mcp_${hostname.replaceAll(".", "-")}_${
+            const functionName = `mcp_tool_${hostname.replaceAll(".", "-")}_${
               mcpTool.name
             }`;
             toolMap.set(functionName, {
@@ -598,6 +587,11 @@ export const chatCompletionsProxy = (config: {
       }
 
       const encoder = new TextEncoder();
+
+      // Helper to emit streaming chunk or collect for non-streaming
+      let collectedContent = "";
+      let collectedReasoningContent = "";
+
       const stream = new ReadableStream({
         async start(controller) {
           try {
@@ -611,23 +605,35 @@ export const chatCompletionsProxy = (config: {
               additional_cost_cents: additionalCostCents,
             };
 
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  id: requestId,
-                  object: "chat.completion.chunk",
-                  created: Math.floor(Date.now() / 1000),
-                  model: body.model,
-                  choices: [
-                    {
-                      index: 0,
-                      delta: { role: "assistant" },
-                      finish_reason: null,
-                    },
-                  ],
-                })}\n\n`,
-              ),
-            );
+            const emitChunk = (chunk: any) => {
+              if (userRequestedStream) {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
+                );
+              }
+              // Collect content for non-streaming response
+              const delta = chunk.choices?.[0]?.delta;
+              if (delta?.content) {
+                collectedContent += delta.content;
+              }
+              if (delta?.reasoning_content) {
+                collectedReasoningContent += delta.reasoning_content;
+              }
+            };
+
+            emitChunk({
+              id: requestId,
+              object: "chat.completion.chunk",
+              created: Math.floor(Date.now() / 1000),
+              model: body.model,
+              choices: [
+                {
+                  index: 0,
+                  delta: { role: "assistant" },
+                  finish_reason: null,
+                },
+              ],
+            });
 
             while (remainingTokens === undefined || remainingTokens > 0) {
               const stepBody = { ...body };
@@ -699,28 +705,24 @@ export const chatCompletionsProxy = (config: {
                         choice.delta?.reasoning_content
                       ) {
                         assistantMessage += choice.delta.content || "";
-                        controller.enqueue(
-                          encoder.encode(
-                            `data: ${JSON.stringify({
-                              id: requestId,
-                              object: "chat.completion.chunk",
-                              created: Math.floor(Date.now() / 1000),
-                              model: body.model,
-                              choices: [
-                                {
-                                  index: 0,
-                                  delta: {
-                                    content: choice.delta.content,
-                                    refusal: choice.delta.refusal,
-                                    reasoning_content:
-                                      choice.delta.reasoning_content,
-                                  },
-                                  finish_reason: null,
-                                },
-                              ],
-                            })}\n\n`,
-                          ),
-                        );
+                        emitChunk({
+                          id: requestId,
+                          object: "chat.completion.chunk",
+                          created: Math.floor(Date.now() / 1000),
+                          model: body.model,
+                          choices: [
+                            {
+                              index: 0,
+                              delta: {
+                                content: choice.delta.content,
+                                refusal: choice.delta.refusal,
+                                reasoning_content:
+                                  choice.delta.reasoning_content,
+                              },
+                              finish_reason: null,
+                            },
+                          ],
+                        });
                       }
 
                       if (choice?.delta?.tool_calls) {
@@ -814,35 +816,31 @@ export const chatCompletionsProxy = (config: {
               for (const toolCall of toolCalls) {
                 if (
                   mcpToolMap?.has(toolCall.name) &&
-                  toolCall.name.startsWith("mcp_")
+                  toolCall.name.startsWith("mcp_tool_")
                 ) {
                   const toolInfo = mcpToolMap.get(toolCall.name)!;
                   const hostname = new URL(toolInfo.serverUrl).hostname;
 
-                  const toolInput = `\n\n<details><summary>🔧 ${
+                  const toolInput = `\n\n<details><summary>tool ${
                     toolInfo.originalName
                   } (${hostname})</summary>\n\n\`\`\`json\n${JSON.stringify(
                     toolCall.arguments,
                     null,
                     2,
                   )}\n\`\`\`\n\n</details>`;
-                  controller.enqueue(
-                    encoder.encode(
-                      `data: ${JSON.stringify({
-                        id: requestId,
-                        object: "chat.completion.chunk",
-                        created: Math.floor(Date.now() / 1000),
-                        model: body.model,
-                        choices: [
-                          {
-                            index: 0,
-                            delta: { content: toolInput },
-                            finish_reason: null,
-                          },
-                        ],
-                      })}\n\n`,
-                    ),
-                  );
+                  emitChunk({
+                    id: requestId,
+                    object: "chat.completion.chunk",
+                    created: Math.floor(Date.now() / 1000),
+                    model: body.model,
+                    choices: [
+                      {
+                        index: 0,
+                        delta: { content: toolInput },
+                        finish_reason: null,
+                      },
+                    ],
+                  });
 
                   try {
                     const sessionKey = toolInfo.serverUrl;
@@ -855,7 +853,7 @@ export const chatCompletionsProxy = (config: {
                         clientInfo,
                       );
                       session = {
-                        sessionId: sessionData.sessionId,
+                        sessionId: sessionData.sessionId || undefined,
                         initialized: true,
                         tools: sessionData.tools,
                       };
@@ -970,23 +968,19 @@ export const chatCompletionsProxy = (config: {
                     });
 
                     const toolFeedback = `\n\n${formattedResult}\n\n`;
-                    controller.enqueue(
-                      encoder.encode(
-                        `data: ${JSON.stringify({
-                          id: requestId,
-                          object: "chat.completion.chunk",
-                          created: Math.floor(Date.now() / 1000),
-                          model: body.model,
-                          choices: [
-                            {
-                              index: 0,
-                              delta: { content: toolFeedback },
-                              finish_reason: null,
-                            },
-                          ],
-                        })}\n\n`,
-                      ),
-                    );
+                    emitChunk({
+                      id: requestId,
+                      object: "chat.completion.chunk",
+                      created: Math.floor(Date.now() / 1000),
+                      model: body.model,
+                      choices: [
+                        {
+                          index: 0,
+                          delta: { content: toolFeedback },
+                          finish_reason: null,
+                        },
+                      ],
+                    });
                   } catch (error: any) {
                     const errorMsg = `**Error**: ${error.message}`;
                     currentMessages.push({
@@ -995,44 +989,69 @@ export const chatCompletionsProxy = (config: {
                       content: errorMsg,
                     });
 
-                    controller.enqueue(
-                      encoder.encode(
-                        `data: ${JSON.stringify({
-                          id: requestId,
-                          object: "chat.completion.chunk",
-                          created: Math.floor(Date.now() / 1000),
-                          model: body.model,
-                          choices: [
-                            {
-                              index: 0,
-                              delta: { content: `\n\n${errorMsg}\n\n` },
-                              finish_reason: null,
-                            },
-                          ],
-                        })}\n\n`,
-                      ),
-                    );
+                    emitChunk({
+                      id: requestId,
+                      object: "chat.completion.chunk",
+                      created: Math.floor(Date.now() / 1000),
+                      model: body.model,
+                      choices: [
+                        {
+                          index: 0,
+                          delta: { content: `\n\n${errorMsg}\n\n` },
+                          finish_reason: null,
+                        },
+                      ],
+                    });
                   }
                 }
               }
             }
 
-            const finalChunk: any = {
-              id: requestId,
-              object: "chat.completion.chunk",
-              created: Math.floor(Date.now() / 1000),
-              model: body.model,
-              choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
-            };
+            if (userRequestedStream) {
+              // Streaming response - send final chunk
+              const finalChunk: any = {
+                id: requestId,
+                object: "chat.completion.chunk",
+                created: Math.floor(Date.now() / 1000),
+                model: body.model,
+                choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+              };
 
-            if (userRequestedUsage && totalUsage.total_tokens > 0) {
-              finalChunk.usage = totalUsage;
+              if (userRequestedUsage && totalUsage.total_tokens > 0) {
+                finalChunk.usage = totalUsage;
+              }
+
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(finalChunk)}\n\n`),
+              );
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            } else {
+              // Non-streaming response - send complete response
+              const nonStreamingResponse: any = {
+                id: requestId,
+                object: "chat.completion",
+                created: Math.floor(Date.now() / 1000),
+                model: body.model,
+                choices: [
+                  {
+                    index: 0,
+                    message: {
+                      role: "assistant",
+                      content: collectedContent || null,
+                      ...(collectedReasoningContent && {
+                        reasoning_content: collectedReasoningContent,
+                      }),
+                    },
+                    finish_reason: "stop",
+                  },
+                ],
+                usage: totalUsage,
+              };
+
+              controller.enqueue(
+                encoder.encode(JSON.stringify(nonStreamingResponse)),
+              );
             }
-
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(finalChunk)}\n\n`),
-            );
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
           } catch (error) {
             console.error("Stream error:", error);
@@ -1042,11 +1061,15 @@ export const chatCompletionsProxy = (config: {
       });
 
       return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
+        headers: userRequestedStream
+          ? {
+              "Content-Type": "text/event-stream",
+              "Cache-Control": "no-cache",
+              Connection: "keep-alive",
+            }
+          : {
+              "Content-Type": "application/json",
+            },
       });
     } catch (error) {
       console.error("Proxy error:", error);

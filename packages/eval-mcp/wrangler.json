@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+  "name": "mcp-eval",
+  "assets": { "directory": "./public" },
+  "compatibility_date": "2025-01-14",
+  "routes": [{ "custom_domain": true, "pattern": "eval-mcp.wilmake.com" }],
+  "observability": {
+    "logs": {
+      "enabled": true
+    }
+  }
+}

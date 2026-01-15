@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Eval Configuration",
+  "type": "object",
+  "properties": {
+    "evals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the evaluation"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this evaluation tests"
+          },
+          "model": {
+            "type": "string",
+            "description": "Model to use for the evaluation"
+          },
+          "basePath": {
+            "type": "string",
+            "description": "Base URL for the LLM API"
+          },
+          "llm_key": {
+            "type": "string",
+            "description": "Environment variable name for the LLM API key"
+          },
+          "mcps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "URL of the MCP server"
+                },
+                "authorization_key": {
+                  "type": "string",
+                  "description": "Authorization key for the MCP server"
+                }
+              },
+              "required": ["url", "authorization_key"]
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Prompt to send for evaluation"
+          },
+          "expected_result": {
+            "type": "string",
+            "description": "Expected result from the evaluation"
+          }
+        },
+        "required": ["name", "description", "model", "basePath", "llm_key", "mcps", "prompt", "expected_result"]
+      }
+    }
+  },
+  "required": ["evals"]
+}
