@@ -9,8 +9,15 @@ Functionality:
 
 Usage
 
-```sh
-npx eval-mcp eval-mcp.json
+```json
+{
+  "devDependencies": {
+    "eval-mcp": "^0.4.0"
+  },
+  "scripts": {
+    "test": "eval-mcp eval-mcp.json"
+  }
+}
 ```
 
 eval-mcp.json
@@ -18,7 +25,6 @@ eval-mcp.json
 ```json
 {
   "$schema": "https://eval-mcp.wilmake.com",
-
   "evals": [
     //... your evals
   ]

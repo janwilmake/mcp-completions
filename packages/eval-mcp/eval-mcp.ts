@@ -1,4 +1,7 @@
+#!/usr/bin/env bun
+
 /// <reference types="@types/node" />
+
 import { readFileSync } from "fs";
 import { OpenAI } from "openai";
 import {

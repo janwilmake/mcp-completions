@@ -1,6 +1,6 @@
 {
   "name": "eval-mcp",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "bin": "eval-mcp.ts",
   "files": [
     "eval-mcp.ts",
