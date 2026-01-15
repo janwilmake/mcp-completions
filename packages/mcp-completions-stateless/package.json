@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "name": "mcp-completions-stateless",
+  "main": "mcp-completions-stateless.ts",
+  "files": [
+    "mcp-completions-stateless.ts",
+    "README.md"
+  ]
+}
