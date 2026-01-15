@@ -23,3 +23,21 @@
 - ✅ Add in token refresh functionality into `universal-mcp-oauth` and refresh tokens asynchronously when starting the stream.
   - ✅ maybe adding a proxy (/mcp/proxy/{url}) that performs refresh if token is expired will be best?
   - ✅ maybe just expose a function `refreshTokenIfNeeded(provider)` or even `stub.getFreshProviders(mcpUrls:string[]):Promise<MCPProvider[]>`
+
+# December 2025
+
+Check [readme](https://github.com/janwilmake/universal-mcp-oauth/tree/main/mcp-completions).
+
+- ✅ Intended usage: **package**
+- ✅ Add shadow url object replacer such that github.com works
+- ✅ Add extract url such that any other html/pdf response works with that as fallback
+- ✅ ensure additional cost for extract and other apis gets properly added to chat completions usage cost
+- ✅ improve error handling; also for url_context
+
+After this; how can I add statefulness and other cool features?
+
+- ✅ Use this in contextarea
+
+# January 15, 2025
+
+Made packages `eval-mcp` and `mcp-completions-stateless`

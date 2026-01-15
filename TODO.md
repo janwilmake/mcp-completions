@@ -1,15 +1,3 @@
-Check [readme](https://github.com/janwilmake/universal-mcp-oauth/tree/main/mcp-completions).
-
-- ✅ Intended usage: **package**
-- ✅ Add shadow url object replacer such that github.com works
-- ✅ Add extract url such that any other html/pdf response works with that as fallback
-- ✅ ensure additional cost for extract and other apis gets properly added to chat completions usage cost
-- ✅ improve error handling; also for url_context
-
-After this; how can I add statefulness and other cool features?
-
-- ✅ Use this in contextarea
-
 NEXT TIME
 
 - in contextarea, try for the resultpage to show the error. this cant be done because it requires to be an eventstream. maybe, the refactor to make it work with `/chat/completions` is nice to do now.
