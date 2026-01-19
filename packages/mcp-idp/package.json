@@ -1,0 +1,12 @@
+{
+  "version": "0.1.0",
+  "name": "mcp-idp",
+  "main": "mcp-idp.ts",
+  "files": [
+    "mcp-idp.ts",
+    "README.md"
+  ],
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251224.0"
+  }
+}
