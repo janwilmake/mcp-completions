@@ -6,12 +6,6 @@ interface MCPToolSpec {
   require_approval?: "never";
 }
 
-interface URLContextTool {
-  type: "url_context";
-  max_urls?: number;
-  max_context_length?: number;
-}
-
 export interface ChatCompletionRequest {
   model: string;
   messages: Array<{
@@ -44,7 +38,6 @@ export interface ChatCompletionRequest {
         };
       }
     | MCPToolSpec
-    | URLContextTool
   >;
   tool_choice?:
     | "none"
@@ -71,16 +64,6 @@ interface UsageStats {
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
-  additional_cost_cents?: number;
-}
-
-export interface ShadowUrlConfig {
-  [oldHostname: string]: string;
-}
-
-export interface ExtractUrlConfig {
-  url: string;
-  bearerToken: string;
 }
 
 const mcpSessions = new Map<string, MCPSession>();
@@ -202,184 +185,10 @@ async function initializeMCPSession(
   return { sessionId, tools: toolsResult.result?.tools || [] };
 }
 
-function applyShadowUrl(url: string, shadowUrls?: ShadowUrlConfig): string {
-  if (!shadowUrls) return url;
-
-  try {
-    const urlObj = new URL(url);
-    const newHostname = shadowUrls[urlObj.hostname];
-    if (newHostname) {
-      urlObj.hostname = newHostname;
-      return urlObj.toString();
-    }
-  } catch {
-    // Invalid URL, return as-is
-  }
-  return url;
-}
-
-function extractUrlsFromMessages(
-  messages: Array<{ role: string; content?: string | null }>,
-): string[] {
-  const urlRegex =
-    /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-  const allUrls = new Set<string>();
-
-  for (const message of messages) {
-    if (message.role === "user" && message.content) {
-      const urls = message.content.match(urlRegex) || [];
-      urls.forEach((url) => allUrls.add(url));
-    }
-  }
-
-  return Array.from(allUrls);
-}
-
-async function fetchUrlContext(
-  url: string,
-  shadowUrls?: ShadowUrlConfig,
-  extractConfig?: ExtractUrlConfig,
-): Promise<{
-  url: string;
-  text: string;
-  tokens: number;
-  failed?: boolean;
-  costCents?: number;
-}> {
-  const effectiveUrl = applyShadowUrl(url, shadowUrls);
-
-  try {
-    const headers: Record<string, string> = {
-      Accept: "text/markdown,text/plain,*/*",
-    };
-
-    const response = await fetch(effectiveUrl, { headers });
-    const contentType = response.headers.get("content-type") || "";
-    const isTextContent =
-      contentType.startsWith("text/plain") ||
-      contentType.startsWith("text/markdown") ||
-      contentType.startsWith("application/json");
-
-    if (!isTextContent && extractConfig) {
-      const extractUrl = `${extractConfig.url}/${encodeURIComponent(
-        effectiveUrl,
-      )}`;
-      const extractResponse = await fetch(extractUrl, {
-        headers: {
-          Authorization: `Bearer ${extractConfig.bearerToken}`,
-          Accept: "text/markdown,text/plain",
-        },
-      });
-
-      if (extractResponse.ok) {
-        const extractedText = await extractResponse.text();
-        const priceHeader = extractResponse.headers.get("x-price");
-        const costCents = priceHeader ? parseFloat(priceHeader) : 0;
-        const tokens = Math.round(extractedText.length / 5);
-        const extractContentType =
-          extractResponse.headers.get("content-type")?.split(";")[0] ||
-          "markdown";
-        const mime = extractContentType.split("/")[1] || "markdown";
-
-        return {
-          url,
-          text: `\`\`\`${mime}\n${extractedText}\n\n\`\`\`\n`,
-          tokens,
-          costCents,
-        };
-      }
-    }
-
-    const isHtml = contentType?.startsWith("text/html");
-    const isPdf = contentType?.startsWith("application/pdf");
-
-    if (isHtml || isPdf) {
-      return {
-        url,
-        text: `${isHtml ? "HTML" : "PDF"} urls are not supported.`,
-        tokens: 0,
-      };
-    }
-
-    const text = await response.text();
-    const mime = contentType?.split(";")[0].split("/")[1] || "text";
-    const tokens = Math.round(text.length / 5);
-    return {
-      url,
-      text: `\`\`\`${mime}\n${text}\n\n\`\`\`\n`,
-      tokens,
-    };
-  } catch (error: any) {
-    return {
-      url,
-      text: `Failed to fetch: ${error.message}. To get context for any url, use jina.ai, firecrawl.dev, uithub.com (for code), or xymake.com (for x threads), or any alternative.`,
-      tokens: 0,
-      failed: true,
-    };
-  }
-}
-
-async function generateUrlContext(
-  messages: Array<{ role: string; content?: string | null }>,
-  maxUrls: number = 10,
-  maxContextLength: number = 1024 * 1024,
-  shadowUrls?: ShadowUrlConfig,
-  extractConfig?: ExtractUrlConfig,
-): Promise<{ context: string | undefined; costCents: number }> {
-  const urls = extractUrlsFromMessages(messages);
-
-  if (urls.length === 0) return { context: undefined, costCents: 0 };
-
-  const urlsToFetch = urls.slice(0, maxUrls);
-
-  let hasHtml = false;
-  let hasError = false;
-  let totalCostCents = 0;
-
-  const urlResults = await Promise.all(
-    urlsToFetch.map((url) => fetchUrlContext(url, shadowUrls, extractConfig)),
-  );
-
-  for (const result of urlResults) {
-    if (
-      result.text.includes("HTML urls are not supported") ||
-      result.text.includes("PDF urls are not supported")
-    )
-      hasHtml = true;
-    if (result.failed) hasError = true;
-    if (result.costCents) totalCostCents += result.costCents;
-  }
-
-  let context = urlResults.reduce((previous, { url, text, tokens }) => {
-    const newContent = `${previous}\n${url} (${tokens} tokens) \n${
-      previous.length > maxContextLength
-        ? "Omitted due to context length."
-        : text
-    }\n`;
-    return newContent;
-  }, "");
-
-  if (hasHtml || hasError) {
-    context =
-      context +
-      `\n\nThere were one or more URLs pasted that returned ${
-        hasHtml ? "HTML/PDF" : "an error"
-      }. If these URLs are needed to answer the user request, please instruct the user to use the suggested alternatives.`;
-  }
-
-  return { context, costCents: totalCostCents };
-}
-
 export const chatCompletionsProxy = (config: {
   clientInfo?: { name: string; version: string };
-  shadowUrls?: ShadowUrlConfig;
-  extractUrl?: ExtractUrlConfig;
 }) => {
-  const {
-    clientInfo = { name: "MCPCompletions", version: "1.0.0" },
-    shadowUrls,
-    extractUrl,
-  } = config;
+  const { clientInfo = { name: "MCPCompletions", version: "1.0.0" } } = config;
 
   const fetchProxy = async (
     input: RequestInfo | URL,
@@ -469,36 +278,6 @@ export const chatCompletionsProxy = (config: {
             { serverUrl: string; originalName: string; authorization?: string }
           >
         | undefined;
-
-      let additionalCostCents = 0;
-
-      // Process URL context
-      const urlContextTool = body.tools?.find((x) => x.type === "url_context");
-      if (urlContextTool) {
-        const maxUrls = (urlContextTool as URLContextTool).max_urls || 10;
-        const maxContextLength =
-          (urlContextTool as URLContextTool).max_context_length || 1024 * 1024;
-
-        const { context: urlContext, costCents } = await generateUrlContext(
-          body.messages,
-          maxUrls,
-          maxContextLength,
-          shadowUrls,
-          extractUrl,
-        );
-
-        additionalCostCents += costCents;
-
-        if (urlContext) {
-          body.messages.unshift({ role: "system", content: urlContext });
-        }
-
-        body.tools = body.tools?.filter((x) => x.type !== "url_context");
-
-        if (!body.tools?.length) {
-          body.tools = undefined;
-        }
-      }
 
       // Process MCP tools
       if (body.tools?.length) {
@@ -602,7 +381,6 @@ export const chatCompletionsProxy = (config: {
               prompt_tokens: 0,
               completion_tokens: 0,
               total_tokens: 0,
-              additional_cost_cents: additionalCostCents,
             };
 
             const emitChunk = (chunk: any) => {
