@@ -28,7 +28,6 @@ const stream = await client.chat.completions.create({
       server_url: "https://mcp.notion.com/mcp",
       authorization: "Bearer YOUR_TOKEN", // Optional: add if server requires auth
     },
-    { type: "url_context", max_urls: 10 },
   ],
 });
 
@@ -40,10 +39,7 @@ for await (const chunk of stream) {
 ## Features
 
 - **MCP Tools**: Discover and execute tools from any MCP server
-- **URL Context**: Fetch content from URLs in messages
-- **Shadow URLs**: Replace hostnames for better access (e.g., `github.com` → `uithub.com`)
-- **Extract Fallback**: Convert HTML/PDF via configurable extract service
-- **Cost Tracking**: Track additional costs in usage stats
+- **Cost Tracking**: Track token usage in completion stats
 - **Stateless**: No Durable Objects or OAuth required - fully local/stateless
 
 ## Configuration
@@ -51,22 +47,10 @@ for await (const chunk of stream) {
 ```ts
 chatCompletionsProxy({
   clientInfo: { name: "App", version: "1.0.0" },
-
-  // Optional: Replace hostnames for better content access
-  shadowUrls: {
-    "github.com": "uithub.com",
-    "x.com": "xymake.com",
-  },
-
-  // Optional: Extract service for HTML/PDF
-  extractUrl: {
-    url: "https://extract.example.com",
-    bearerToken: "your-api-key",
-  },
 });
 ```
 
-## Tool Types
+## Tool Configuration
 
 ### MCP Server
 
@@ -77,16 +61,6 @@ chatCompletionsProxy({
   authorization: "Bearer YOUR_TOKEN", // Optional
   allowed_tools: { tool_names: ["specific_tool"] }, // Optional
   require_approval: "never"
-}
-```
-
-### URL Context
-
-```ts
-{
-  type: "url_context",
-  max_urls: 10,
-  max_context_length: 1048576
 }
 ```
 
@@ -105,6 +79,7 @@ This stateless version removes:
 - OAuth/IDP middleware and Durable Objects dependency
 - Automatic authentication flow
 - Persistent token storage
+- URL context extraction functionality
 
 Instead, you provide authorization directly in the tool configuration. This makes it suitable for:
 
