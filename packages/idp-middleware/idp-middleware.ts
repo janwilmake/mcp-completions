@@ -1,5 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 /// <reference lib="esnext" />
+//https://contextarea.com/rules-httpsrawg-quxzcl3pvvuoi9
 import { DurableObject } from "cloudflare:workers";
 
 export interface IdpMiddlewareEnv {
