@@ -6,28 +6,28 @@ import {
   MODEL,
   DEFAULT_SYSTEM_PROMPT,
   baseHtml,
+  getFaviconUrl,
 } from "./shared";
-
-function getApexDomain(url: string): string {
-  const hostname = new URL(url).hostname;
-  const parts = hostname.split(".");
-  if (parts.length <= 2) return hostname;
-  return parts.slice(-2).join(".");
-}
 
 function renderChatHeader(
   hostname: string,
-  apexDomain: string,
+  mcpUrl: string,
   user?: { name: string; username: string; profile_image_url?: string },
 ): string {
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${apexDomain}&sz=64`;
+  const faviconUrl = getFaviconUrl(mcpUrl);
+  const installUrl = `https://installthismcp.com/${hostname}?url=${encodeURIComponent(mcpUrl)}`;
   const userSection = user
     ? `<div class="user-info">
+        <a href="${installUrl}" target="_blank" rel="noopener" class="btn btn-primary">Install</a>
         ${user.profile_image_url ? `<img src="${user.profile_image_url}" alt="${user.name}" class="user-avatar">` : ""}
         <span class="mono">@${user.username}</span>
         <a href="/logout" class="btn">Logout</a>
       </div>`
-    : `<a href="/authorize" class="btn btn-primary">Login with X</a>`;
+    : `
+   <div class="user-info">
+   <a href="${installUrl}" target="_blank" rel="noopener" class="btn btn-primary">Install</a>
+<a href="/authorize" class="btn btn-primary">Login with X</a>
+</div>`;
 
   return `
     <header class="header">
@@ -74,7 +74,9 @@ export async function handleChatCompletions(
   }
 
   // Get system prompt
-  const systemPrompt = await env.OPENAI_KEYS.get(`system_prompt:${ctx.user.id}`);
+  const systemPrompt = await env.OPENAI_KEYS.get(
+    `system_prompt:${ctx.user.id}`,
+  );
   const currentSystemPrompt = systemPrompt ?? DEFAULT_SYSTEM_PROMPT;
 
   const { fetchProxy } = chatCompletionsProxy({
@@ -132,7 +134,6 @@ export async function handleMcpChat(
   const url = new URL(request.url);
   const mcpUrl = `https://${mcpPath}`;
   const hostname = new URL(mcpUrl).hostname;
-  const apexDomain = getApexDomain(mcpUrl);
   const ogImageUrl = `${url.origin}/og/${mcpPath}`;
 
   const chatInterface = `
@@ -178,6 +179,8 @@ export async function handleMcpChat(
       function renderMarkdown(content) {
         try {
           let html = marked.parse(content);
+          // Open external links in new tab
+          html = html.replace(/<a href="/g, '<a target="_blank" rel="noopener" href="');
           // Add copy buttons to code blocks
           html = html.replace(/<pre><code(\\s+class="language-([^"]*)")?>/g, (match, classAttr, lang) => {
             const langLabel = lang || 'code';
@@ -289,7 +292,7 @@ export async function handleMcpChat(
 
   if (!ctx.authenticated) {
     const content = `
-      ${renderChatHeader(hostname, apexDomain)}
+      ${renderChatHeader(hostname, mcpUrl)}
       <div class="blurred">
         ${chatInterface}
       </div>
@@ -312,7 +315,7 @@ export async function handleMcpChat(
   const openaiKey = await env.OPENAI_KEYS.get(ctx.user!.id);
   if (!openaiKey) {
     const content = `
-      ${renderChatHeader(hostname, apexDomain, ctx.user)}
+      ${renderChatHeader(hostname, mcpUrl, ctx.user)}
       <div class="blurred">
         ${chatInterface}
       </div>
@@ -340,7 +343,7 @@ export async function handleMcpChat(
 
   if (auth.loginUrl) {
     const content = `
-      ${renderChatHeader(hostname, apexDomain, ctx.user)}
+      ${renderChatHeader(hostname, mcpUrl, ctx.user)}
       <div class="blurred">
         ${chatInterface}
       </div>
@@ -362,7 +365,7 @@ export async function handleMcpChat(
 
   // All good, show the chat interface
   const content = `
-    ${renderChatHeader(hostname, apexDomain, ctx.user)}
+    ${renderChatHeader(hostname, mcpUrl, ctx.user)}
     ${chatInterface}
   `;
 

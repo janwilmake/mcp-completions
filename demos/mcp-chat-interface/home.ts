@@ -5,6 +5,7 @@ import {
   DEFAULT_SYSTEM_PROMPT,
   baseHtml,
   renderHeader,
+  getFaviconUrl,
 } from "./shared";
 
 export async function handleConfig(
@@ -91,7 +92,8 @@ export async function handleConfig(
           .map(
             (p) => `
           <li class="provider-item">
-            <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <img src="${getFaviconUrl(p.resource_url)}" width="20" height="20" style="border-radius: 4px;" />
               <span class="provider-url">${p.resource_url}</span>
               ${p.access_token ? '<span class="status-badge">Connected</span>' : '<span class="status-badge pending">Pending</span>'}
             </div>
@@ -110,6 +112,19 @@ export async function handleConfig(
     ${renderHeader(ctx.user)}
     <div class="container">
       <h1 style="margin-bottom: 2rem;">Configuration</h1>
+
+      <div class="card">
+        <div class="card-title">Connected MCP Servers</div>
+        ${providersList}
+      </div>
+
+      <div class="card">
+        <div class="card-title">Add MCP Server</div>
+        <form action="/" method="get" onsubmit="event.preventDefault(); const url = this.querySelector('input').value.replace(/^https?:\\/\\//, ''); window.location.href = '/' + url;">
+          <input type="url" name="mcp_url" placeholder="https://mcp.example.com" required>
+          <button type="submit" class="btn btn-primary">Connect</button>
+        </form>
+      </div>
 
       <div class="card">
         <div class="card-title">OpenAI API Key</div>
@@ -136,18 +151,7 @@ export async function handleConfig(
         </form>
       </div>
 
-      <div class="card">
-        <div class="card-title">Connected MCP Servers</div>
-        ${providersList}
-      </div>
 
-      <div class="card">
-        <div class="card-title">Add MCP Server</div>
-        <form action="/" method="get" onsubmit="event.preventDefault(); const url = this.querySelector('input').value.replace(/^https?:\\/\\//, ''); window.location.href = '/' + url;">
-          <input type="url" name="mcp_url" placeholder="https://mcp.example.com" required>
-          <button type="submit" class="btn btn-primary">Connect</button>
-        </form>
-      </div>
     </div>
   `;
 

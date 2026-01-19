@@ -59,7 +59,8 @@ async function handler(
     !path.startsWith("/me") &&
     !path.startsWith("/logout")
   ) {
-    const mcpPath = path.slice(1);
+    // Include query params in mcpPath so MCP URLs can have query strings
+    const mcpPath = path.slice(1) + url.search;
     return handleMcpChat(request, env, ctx, mcpPath);
   }
 

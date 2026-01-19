@@ -68,6 +68,23 @@ export const STYLES = `
     --index-black: #1d1b16;
     --neural: #d8d0bf;
     --signal: #fb631b;
+    --code-bg: #1d1b16;
+    --code-text: #fcfcfa;
+    --code-header-bg: #2d2d2d;
+    --muted: #666;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --off-white: #1a1a1a;
+      --index-black: #f0f0f0;
+      --neural: #333;
+      --signal: #ff7a3d;
+      --code-bg: #0d0d0d;
+      --code-text: #e0e0e0;
+      --code-header-bg: #252525;
+      --muted: #999;
+    }
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -232,7 +249,7 @@ export const STYLES = `
 
   .modal p {
     margin-bottom: 1.5rem;
-    color: #666;
+    color: var(--muted);
   }
 
   .chat-container {
@@ -272,14 +289,14 @@ export const STYLES = `
 
   .message-content code {
     font-family: 'FT System Mono', monospace;
-    background: rgba(0,0,0,0.1);
+    background: var(--neural);
     padding: 0.125rem 0.25rem;
     font-size: 0.875rem;
   }
 
   .message-content pre {
-    background: var(--index-black);
-    color: var(--off-white);
+    background: var(--code-bg);
+    color: var(--code-text);
     padding: 1rem;
     overflow-x: auto;
     margin: 0.5rem 0;
@@ -312,7 +329,7 @@ export const STYLES = `
     border-left: 3px solid var(--signal);
     padding-left: 1rem;
     margin: 0.5rem 0;
-    color: #666;
+    color: var(--muted);
   }
 
   .message-content a {
@@ -342,7 +359,7 @@ export const STYLES = `
   }
 
   .message-content th {
-    background: rgba(0,0,0,0.05);
+    background: var(--neural);
     font-weight: 600;
   }
 
@@ -350,16 +367,16 @@ export const STYLES = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #2d2d2d;
+    background: var(--code-header-bg);
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
-    color: #999;
+    color: var(--muted);
   }
 
   .copy-btn {
     background: transparent;
-    border: 1px solid #666;
-    color: #999;
+    border: 1px solid var(--muted);
+    color: var(--muted);
     padding: 0.25rem 0.5rem;
     font-size: 0.7rem;
     cursor: pointer;
@@ -367,8 +384,8 @@ export const STYLES = `
   }
 
   .copy-btn:hover {
-    background: #444;
-    color: #fff;
+    background: var(--neural);
+    color: var(--index-black);
   }
 
   .chat-input-container {
@@ -430,7 +447,7 @@ export const STYLES = `
   .empty-state {
     text-align: center;
     padding: 3rem;
-    color: #666;
+    color: var(--muted);
   }
 `;
 
@@ -448,6 +465,7 @@ export function baseHtml(title: string, content: string, ogImage?: string): stri
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>${title}</title>
   ${ogTags}
   <style>${STYLES}</style>
@@ -456,6 +474,18 @@ export function baseHtml(title: string, content: string, ogImage?: string): stri
   ${content}
 </body>
 </html>`;
+}
+
+export function getApexDomain(url: string): string {
+  const hostname = new URL(url).hostname;
+  const parts = hostname.split(".");
+  if (parts.length <= 2) return hostname;
+  return parts.slice(-2).join(".");
+}
+
+export function getFaviconUrl(url: string, size: number = 64): string {
+  const apexDomain = getApexDomain(url);
+  return `https://www.google.com/s2/favicons?domain=${apexDomain}&sz=${size}`;
 }
 
 export function renderHeader(user?: {

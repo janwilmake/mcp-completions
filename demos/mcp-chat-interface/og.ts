@@ -1,4 +1,5 @@
 import { ImageResponse } from "workers-og";
+import { getFaviconUrl } from "./shared";
 
 async function discoverMcpInfo(
   mcpUrl: string,
@@ -95,18 +96,10 @@ async function discoverMcpInfo(
   }
 }
 
-function getApexDomain(url: string): string {
-  const hostname = new URL(url).hostname;
-  const parts = hostname.split(".");
-  if (parts.length <= 2) return hostname;
-  return parts.slice(-2).join(".");
-}
-
 export async function handleOgImage(mcpPath: string): Promise<Response> {
   const mcpUrl = `https://${mcpPath}`;
   const info = await discoverMcpInfo(mcpUrl);
-  const apexDomain = getApexDomain(mcpUrl);
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${apexDomain}&sz=128`;
+  const faviconUrl = getFaviconUrl(mcpUrl, 128);
 
   const og = `<div
     style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #fcfcfa; margin: 0; display: flex;">
