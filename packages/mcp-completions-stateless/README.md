@@ -64,6 +64,38 @@ chatCompletionsProxy({
 }
 ```
 
+### Parallel web search and page fetching
+
+[Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp) provides
+free web search and page fetching without a Parallel account or API key. Anonymous
+searches use Fast mode and have lower rate limits than authenticated requests.
+
+To use it with the Quick Start above, replace the `tools` array with:
+
+```ts
+tools: [
+  {
+    type: "mcp",
+    server_url: "https://search.parallel.ai/mcp",
+    allowed_tools: { tool_names: ["web_search", "web_fetch"] },
+    require_approval: "never",
+  },
+],
+```
+
+Then change the user message to a research task, for example: "Search for the
+latest Model Context Protocol release, fetch the release notes, and summarize the
+changes with source links." The proxy discovers `web_search` and `web_fetch`,
+exposes them as functions to the model, and executes the model's tool calls.
+Your LLM provider's credentials are still required, as in the Quick Start.
+
+Leave `authorization` out for anonymous access. For higher limits, set it to
+`"Bearer " + process.env.PARALLEL_API_KEY` with a key from
+[Parallel](https://platform.parallel.ai). This Search MCP endpoint is separate
+from the authenticated `https://task-mcp.parallel.ai/mcp` endpoint in the stateless
+demos, which runs research tasks. Page fetching here uses the MCP `web_fetch`
+tool; it does not require `url_context`, which this stateless package omits.
+
 ## How It Works
 
 1. Request with MCP tools hits the proxy
